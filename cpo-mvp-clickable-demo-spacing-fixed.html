@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CPO Simulator Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:#070910;
+      --bg-2:#0d1220;
+      --panel:rgba(11,15,26,.84);
+      --panel-border:rgba(255,255,255,.08);
+      --text:#eef2ff;
+      --text-muted:#adb5cb;
+      --surface:#ffffff;
+      --surface-subtle:#f8f9fd;
+      --surface-soft:#eef2f7;
+      --surface-line:#dde3ef;
+      --text-dark:#111827;
+      --text-soft:#5f687c;
+      --primary:#8b5cf6;
+      --primary-2:#6d7dff;
+      --primary-soft:#f1edff;
+      --success:#16a34a;
+      --success-soft:#dcfce7;
+      --warning:#d97706;
+      --warning-soft:#fef3c7;
+      --radius-shell:36px;
+      --radius-screen:30px;
+      --radius-card:24px;
+      --radius-pill:999px;
+      --shadow-shell:0 28px 80px rgba(0,0,0,.42);
+      --shadow-card:0 16px 36px rgba(15,23,42,.08);
+      --space-2:8px;
+      --space-3:12px;
+      --space-4:16px;
+      --space-5:20px;
+      --space-6:24px;
+      --space-8:32px;
+    }
+
+    * { box-sizing:border-box; margin:0; padding:0; }
+    html, body { height:100%; }
+    body {
+      font-family:Inter, system-ui, sans-serif;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(109,125,255,.20), transparent 24%),
+        radial-gradient(circle at 90% 10%, rgba(139,92,246,.18), transparent 22%),
+        linear-gradient(180deg, #12182b 0%, #090c15 52%, #06080f 100%);
+      color:var(--text);
+      font-size:16px;
+      line-height:1.55;
+      overflow-x:hidden;
+    }
+
+    button, input, textarea { font:inherit; }
+    button { cursor:pointer; border:none; }
+    [hidden] { display:none !important; }
+
+    .app {
+      max-width:1440px;
+      margin:0 auto;
+      padding:24px;
+    }
+
+    .layout {
+      display:grid;
+      grid-template-columns:280px minmax(0,1fr);
+      gap:18px;
+      align-items:start;
+    }
+
+    .sidebar {
+      position:sticky;
+      top:24px;
+      background:var(--panel);
+      border:1px solid var(--panel-border);
+      border-radius:30px;
+      padding:16px;
+      box-shadow:var(--shadow-shell);
+      backdrop-filter:blur(18px);
+    }
+
+    .side-head {
+      margin-bottom:12px;
+      font-size:12px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:#8f98b0;
+    }
+
+    .tabs {
+      display:grid;
+      gap:10px;
+    }
+
+    .tab {
+      padding:17px;
+      border-radius:18px;
+      text-align:left;
+      background:transparent;
+      color:var(--text);
+      border:1px solid transparent;
+      transition:.2s ease;
+    }
+
+    .tab:hover {
+      background:rgba(255,255,255,.04);
+    }
+
+    .tab.active {
+      background:linear-gradient(135deg, rgba(139,92,246,.18), rgba(109,125,255,.12));
+      border-color:rgba(139,92,246,.25);
+    }
+
+    .tab span {
+      display:block;
+      margin-top:5px;
+      font-size:13px;
+      color:#aab2c8;
+    }
+
+    .device {
+      background:var(--panel);
+      border:1px solid var(--panel-border);
+      border-radius:var(--radius-shell);
+      padding:14px;
+      box-shadow:var(--shadow-shell);
+      overflow:hidden;
+    }
+
+    .device-inner {
+      min-height:860px;
+      background:linear-gradient(180deg, #f7f9fd, #eef2f8);
+      border-radius:var(--radius-screen);
+      overflow:hidden;
+      color:var(--text-dark);
+    }
+
+    .ui-top {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      padding:18px 22px;
+      background:rgba(255,255,255,.75);
+      border-bottom:1px solid var(--surface-line);
+    }
+
+    .ui-title {
+      font-size:20px;
+      font-weight:800;
+      letter-spacing:-.02em;
+      color:var(--text-dark);
+    }
+
+    .ui-sub {
+      font-size:13px;
+      color:#667085;
+    }
+
+    .ui-body {
+      display:grid;
+      gap:20px;
+      padding:24px;
+    }
+
+    .screen { display:none; }
+    .screen.active { display:grid; gap:20px; }
+
+    .section-header {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:16px;
+      padding-bottom:4px;
+    }
+
+    .stepper {
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+    }
+
+    .step-btn,
+    .badge,
+    .status,
+    .chip {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:42px;
+      padding:10px 14px;
+      border-radius:var(--radius-pill);
+      font-size:13px;
+      font-weight:700;
+    }
+
+    .step-btn {
+      background:var(--surface-soft);
+      color:var(--text-soft);
+      border:1px solid var(--surface-line);
+    }
+
+    .step-btn.active {
+      background:linear-gradient(135deg, var(--primary), var(--primary-2));
+      color:#fff;
+      border-color:transparent;
+    }
+
+    .badge {
+      min-height:auto;
+      padding:8px 12px;
+      background:#ede9fe;
+      color:var(--primary);
+    }
+
+    .status.wait {
+      min-height:auto;
+      padding:8px 12px;
+      background:var(--warning-soft);
+      color:var(--warning);
+    }
+
+    .status.ok {
+      min-height:auto;
+      padding:8px 12px;
+      background:var(--success-soft);
+      color:var(--success);
+    }
+
+    .chip {
+      min-height:auto;
+      padding:8px 12px;
+      background:var(--surface-soft);
+      color:#596579;
+    }
+
+    .chip.green {
+      background:var(--success-soft);
+      color:#15803d;
+    }
+
+    .chip.purple {
+      background:var(--primary-soft);
+      color:var(--primary);
+    }
+
+    .demo-stage {
+      display:grid;
+      gap:20px;
+      padding:22px;
+      background:var(--surface);
+      border:1px solid var(--surface-line);
+      border-radius:var(--radius-screen);
+      box-shadow:var(--shadow-card);
+    }
+
+    .row,
+    .row-3,
+    .split,
+    .skill-grid,
+    .stack {
+      display:grid;
+      gap:18px;
+    }
+
+    .row { grid-template-columns:repeat(2, minmax(0,1fr)); }
+    .row-3 { grid-template-columns:repeat(3, minmax(0,1fr)); }
+    .split { grid-template-columns:1.12fr .88fr; }
+    .skill-grid { grid-template-columns:repeat(3, minmax(0,1fr)); }
+
+    .panel,
+    .card,
+    .upload,
+    .skill,
+    .result,
+    .block {
+      padding:20px;
+      background:var(--surface);
+      border:1px solid var(--surface-line);
+      border-radius:var(--radius-card);
+      box-shadow:var(--shadow-card);
+      color:var(--text-dark);
+    }
+
+    .panel h3,
+    .card h3,
+    .upload h3,
+    .skill h3,
+    .result h3,
+    .block h3 {
+      letter-spacing:-.02em;
+    }
+
+    .panel p,
+    .card p,
+    .upload p,
+    .skill p,
+    .result p,
+    .block p {
+      color:var(--text-soft);
+      margin-top:8px;
+    }
+
+    .subtle {
+      background:var(--surface-subtle);
+    }
+
+    .result-highlight {
+      background:linear-gradient(135deg, #ffffff, #f5f2ff);
+    }
+
+    .button {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:132px;
+      height:48px;
+      padding:0 18px;
+      border-radius:15px;
+      font-weight:700;
+      transition:.2s ease;
+    }
+
+    .button:hover:not(:disabled) {
+      transform:translateY(-1px);
+    }
+
+    .button.primary {
+      background:linear-gradient(135deg, var(--primary), var(--primary-2));
+      color:#fff;
+    }
+
+    .button.secondary {
+      background:#fff;
+      border:1px solid var(--surface-line);
+      color:var(--text-dark);
+    }
+
+    .button.ghost {
+      background:#f4f7fc;
+      color:#556071;
+    }
+
+    .button:disabled {
+      opacity:.45;
+      cursor:not-allowed;
+    }
+
+    .section-title,
+    .footer-actions,
+    .meta,
+    .chips {
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+
+    .upload {
+      display:grid;
+      gap:12px;
+      border-style:dashed;
+      background:linear-gradient(180deg, #fff, #fbfcff);
+    }
+
+    .upload.good {
+      background:#f6fff8;
+      border-color:#86efac;
+    }
+
+    .hidden-input {
+      display:none;
+    }
+
+    .progress {
+      height:12px;
+      background:#e9edf7;
+      border-radius:var(--radius-pill);
+      overflow:hidden;
+    }
+
+    .progress > span {
+      display:block;
+      height:100%;
+      border-radius:var(--radius-pill);
+      background:linear-gradient(90deg, var(--primary), var(--primary-2));
+    }
+
+    .field {
+      display:grid;
+      gap:8px;
+    }
+
+    .field label {
+      font-size:14px;
+      font-weight:700;
+      color:#344054;
+    }
+
+    .textarea {
+      width:100%;
+      min-height:180px;
+      padding:16px;
+      border:1px solid #dbe2ee;
+      border-radius:16px;
+      background:#fff;
+      color:#111827;
+      resize:none;
+    }
+
+    .meta {
+      font-size:13px;
+      color:#6b7280;
+    }
+
+    .skill {
+      display:grid;
+      gap:12px;
+      background:linear-gradient(180deg, #fff, #fbfbff);
+    }
+
+    .option-list {
+      display:grid;
+      gap:10px;
+      margin-top:12px;
+    }
+
+    .option {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding:15px 16px;
+      background:#fff;
+      border:1px solid #d9e0ec;
+      border-radius:16px;
+    }
+
+    .option.active {
+      background:#f5f1ff;
+      border-color:rgba(139,92,246,.38);
+    }
+
+    .score {
+      font-size:36px;
+      font-weight:800;
+      color:var(--text-dark);
+      margin-top:10px;
+      line-height:1;
+    }
+
+    .section-gap-top { margin-top:16px; }
+
+    .section-gap-sm { margin-top:10px; }
+
+    .stack-tight { display:grid; gap:12px; }
+
+.upload-zone {
+      margin-top:12px;
+      padding-top:16px;
+      border-top:1px solid #edf1f7;
+    }
+
+    @media (max-width:1120px) {
+      .layout,
+      .row,
+      .row-3,
+      .split,
+      .skill-grid {
+        grid-template-columns:1fr;
+      }
+
+      .sidebar {
+        position:static;
+      }
+
+      .device-inner {
+        min-height:auto;
+      }
+
+      .section-header {
+        align-items:flex-start;
+      }
+
+      .button {
+        width:100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="layout">
+      <aside class="sidebar">
+        <div class="side-head">Навигация по сценарию</div>
+        <div class="tabs">
+          <button class="tab active" data-screen="diagnostic">
+            <strong>Диагностика продуктовых навыков</strong>
+            <span>Вступление, задание, анализ, результаты</span>
+          </button>
+          <button class="tab" data-screen="simulator">
+            <strong>Симулятор продуктовых навыков</strong>
+            <span>Навыки, прохождение, итог</span>
+          </button>
+        </div>
+      </aside>
+
+      <main class="device">
+        <div class="device-inner">
+          <div class="ui-top">
+            <div>
+              <div class="ui-title" id="screenTitle">Диагностика продуктовых навыков</div>
+              <div class="ui-sub" id="screenSubtitle">Загрузите материалы и пройдите оценку навыков</div>
+            </div>
+            <div class="badge" id="screenBadge">Раздел 1</div>
+          </div>
+
+          <div class="ui-body">
+            <section class="screen active" id="screen-diagnostic">
+              <div class="section-header">
+                <h3>Диагностика продуктовых навыков</h3>
+                <div class="stepper">
+                  <button class="step-btn active" data-diag-step="intro">Вступление</button>
+                  <button class="step-btn" data-diag-step="task">Задание</button>
+                  <button class="step-btn" data-diag-step="processing">Анализ</button>
+                  <button class="step-btn" data-diag-step="results">Результаты</button>
+                </div>
+              </div>
+
+              <div class="demo-stage">
+                <div class="split" data-diag-view="intro">
+                  <div class="panel">
+                    <div class="section-title">
+                      <h3>Вступление в диагностику</h3>
+                      <span class="chip purple">11 заданий</span>
+                    </div>
+                    <p>Кейс: продукт сталкивается с замедлением активации и снижением конверсии в ключевом пользовательском сценарии. Ваша задача — проанализировать проблему и предложить продуктовые решения.</p>
+                    <div class="footer-actions section-gap-top">
+                      <button class="button primary" data-diag-next="task">Начать диагностику</button>
+                    </div>
+                  </div>
+                  <div class="card result-highlight">
+                    <h3>Формат прохождения</h3>
+                    <p>11 последовательных заданий, сохранение ответов и переход к результатам после завершения анализа.</p>
+                  </div>
+                </div>
+
+                <div class="panel" data-diag-view="task" hidden>
+                  <div class="section-title">
+                    <h3>Задание 5 из 11</h3>
+                    <span class="chip">Навык: Гипотезы</span>
+                  </div>
+                  <div class="progress section-gap-top"><span class="progress-45"></span></div>
+                  <div class="block subtle section-gap-top">
+                    <h3>Какую гипотезу вы бы проверили первой и почему?</h3>
+                    <p>Опишите логику выбора, влияние на ключевую метрику и способ оценки результата после эксперимента.</p>
+                  </div>
+                  <div class="field section-gap-top">
+                    <label>Ответ</label>
+                    <textarea class="textarea">Я бы начал с гипотезы, которая влияет на активацию в первом ценном действии пользователя. Затем определил бы ключевую метрику, guardrail-метрики и критерии успеха эксперимента...</textarea>
+                  </div>
+                  <div class="meta">
+                    <span>Минимум 50 символов</span>
+                    <span>168 символов</span>
+                  </div>
+                  <div class="footer-actions section-gap-top">
+                    <button class="button ghost" data-diag-next="intro">Назад</button>
+                    <button class="button primary" data-diag-next="processing">Завершить диагностику</button>
+                  </div>
+                </div>
+
+                <div class="panel result-highlight" data-diag-view="processing" hidden>
+                  <div class="section-title">
+                    <h3>Анализ ответов</h3>
+                    <span class="chip purple">AI-ready</span>
+                  </div>
+                  <p>Оцениваем ответы, формируем комментарии и рекомендации по навыкам.</p>
+                  <div class="progress section-gap-top"><span id="processingBar" class="progress-15"></span></div>
+                  <div class="footer-actions section-gap-top">
+                    <button class="button ghost" data-diag-next="task">Назад</button>
+                    <button class="button primary" id="finishProcessing">Показать результаты</button>
+                  </div>
+                </div>
+
+                <div data-diag-view="results" hidden>
+                  <div class="row-3">
+                    <div class="result result-highlight stack-tight">
+                      <h3>Анализ рынка</h3>
+                      <div class="score">4/6</div>
+                      <div class="chips"><span class="chip green">Рекомендован</span></div>
+                    </div>
+                    <div class="result stack-tight">
+                      <h3>Метрики продукта</h3>
+                      <div class="score">5/6</div>
+                      <div class="chips"><span class="chip">Сильная зона</span></div>
+                    </div>
+                    <div class="result result-highlight stack-tight">
+                      <h3>Гипотезы</h3>
+                      <div class="score">3/6</div>
+                      <div class="chips"><span class="chip green">Рекомендован</span></div>
+                    </div>
+                  </div>
+                  <div class="row section-gap-top">
+                    <div class="panel">
+                      <h3>Комментарии</h3>
+                      <p>Ответы структурированы, но в ряде кейсов не хватает приоритизации и связки между решением, метрикой и ожидаемым эффектом.</p>
+                    </div>
+                    <div class="panel">
+                      <h3>Рекомендации</h3>
+                      <div class="chips section-gap-top">
+                        <span class="chip green">Анализ рынка</span>
+                        <span class="chip green">Гипотезы</span>
+                        <span class="chip green">Метрики</span>
+                      </div>
+                      <div class="footer-actions section-gap-top">
+                        <button class="button ghost" data-diag-next="task">Назад</button>
+                        <button class="button primary" id="toSimulator">Перейти в симулятор</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="upload-zone">
+                  <div class="row">
+                    <div class="upload" id="excelZone">
+                      <div class="section-title">
+                        <h3>Excel с критериями</h3>
+                        <span class="status wait" id="excelStatus">Ожидает</span>
+                      </div>
+                      <p id="excelText">Файл не выбран</p>
+                      <button class="button secondary" id="excelBtn">Загрузить файл</button>
+                      <input class="hidden-input" id="excelInput" type="file" accept=".xlsx,.xls" />
+                    </div>
+                    <div class="upload" id="wordZone">
+                      <div class="section-title">
+                        <h3>Word с кейсом и заданиями</h3>
+                        <span class="status wait" id="wordStatus">Ожидает</span>
+                      </div>
+                      <p id="wordText">Файл не выбран</p>
+                      <button class="button secondary" id="wordBtn">Загрузить файл</button>
+                      <input class="hidden-input" id="wordInput" type="file" accept=".docx,.doc" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="screen" id="screen-simulator">
+              <div class="section-header">
+                <h3>Симулятор продуктовых навыков</h3>
+                <div class="stepper">
+                  <button class="step-btn active" data-sim-step="skills">Навыки</button>
+                  <button class="step-btn" data-sim-step="session">Прохождение</button>
+                  <button class="step-btn" data-sim-step="results">Итог</button>
+                </div>
+              </div>
+
+              <div class="demo-stage">
+                <div class="panel" data-sim-view="skills">
+                  <div class="section-title">
+                    <h3>Доступные навыки</h3>
+                    <span class="chip purple">Рекомендации из диагностики</span>
+                  </div>
+                  <div class="skill-grid section-gap-top">
+                    <div class="skill">
+                      <h3>Анализ рынка</h3>
+                      <p>Статус: не начат</p>
+                      <div class="chips"><span class="chip green">Рекомендован</span></div>
+                      <button class="button secondary">Открыть</button>
+                    </div>
+                    <div class="skill result-highlight">
+                      <h3>Метрики продукта</h3>
+                      <p>Статус: в процессе</p>
+                      <div class="chips"><span class="chip green">Рекомендован</span></div>
+                      <button class="button secondary">Открыть</button>
+                    </div>
+                    <div class="skill result-highlight">
+                      <h3>Гипотезы</h3>
+                      <p>Статус: не начат</p>
+                      <div class="chips"><span class="chip green">Рекомендован</span></div>
+                      <button class="button primary" data-sim-next="session">Начать навык</button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="panel" data-sim-view="session" hidden>
+                  <div class="section-title">
+                    <h3>Прохождение навыка: Гипотезы</h3>
+                    <span class="chip">Шаг 3 из 8</span>
+                  </div>
+                  <div class="progress section-gap-top"><span class="progress-38"></span></div>
+                  <div class="stack section-gap-top">
+                    <div class="block subtle">
+                      <h3>Теория</h3>
+                      <p>Сильная продуктовая гипотеза описывает изменение, целевой сегмент, ожидаемое изменение поведения и измеримый эффект на метрику.</p>
+                    </div>
+                    <div class="block subtle">
+                      <h3>Кейс</h3>
+                      <p>Команда видит падение активации в онбординге. Нужно определить первую гипотезу для теста и способ оценки результата.</p>
+                    </div>
+                  </div>
+                  <div class="block section-gap-top">
+                    <h3>Какой вариант вы выберете?</h3>
+                    <div class="option-list">
+                      <div class="option active">
+                        <span>Сократить число шагов онбординга</span>
+                        <span class="chip purple">Выбрано</span>
+                      </div>
+                      <div class="option"><span>Добавить больше подсказок на каждом экране</span></div>
+                      <div class="option"><span>Расширить форму сбора профиля</span></div>
+                    </div>
+                  </div>
+                  <div class="block section-gap-top" style="background:#f6fff8;border-color:#ccefd9;">
+                    <h3>Обратная связь</h3>
+                    <p>Вы выбрали наиболее проверяемую гипотезу: она устраняет ключевое трение в сценарии и позволяет быстро измерить эффект на activation.</p>
+                  </div>
+                  <div class="footer-actions section-gap-top">
+                    <button class="button ghost" data-sim-next="skills">Назад</button>
+                    <button class="button primary" data-sim-next="results">Завершить навык</button>
+                  </div>
+                </div>
+
+                <div data-sim-view="results" hidden>
+                  <div class="row">
+                    <div class="result result-highlight stack-tight">
+                      <h3>Итог по навыку</h3>
+                      <div class="score">78%</div>
+                      <p>по закрытым вопросам</p>
+                    </div>
+                    <div class="result stack-tight">
+                      <h3>Статус открытых ответов</h3>
+                      <p>Содержательно, но можно усилить аргументацию выбора и критерии успеха.</p>
+                    </div>
+                  </div>
+                  <div class="footer-actions section-gap-top">
+                    <button class="button ghost" data-sim-next="session">Назад</button>
+                    <button class="button primary" data-sim-next="skills">К навыкам</button>
+                  </div>
+                </div>
+
+                <div class="upload-zone">
+                  <div class="upload" id="simZone">
+                    <div class="section-title">
+                      <h3>Word с контентом симулятора</h3>
+                      <span class="status wait" id="simStatus">Ожидает</span>
+                    </div>
+                    <p id="simText">Файл не выбран</p>
+                    <button class="button secondary" id="simBtn">Загрузить файл</button>
+                    <input class="hidden-input" id="simInput" type="file" accept=".docx,.doc" />
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </main>
+    </section>
+  </div>
+
+  <script>
+    const ui = {
+      topTabs: [...document.querySelectorAll('.tab')],
+      topScreens: [...document.querySelectorAll('.screen')],
+      title: document.getElementById('screenTitle'),
+      subtitle: document.getElementById('screenSubtitle'),
+      badge: document.getElementById('screenBadge'),
+      processingBar: document.getElementById('processingBar')
+    };
+
+    const screenMeta = {
+      diagnostic: {
+        title: 'Диагностика продуктовых навыков',
+        subtitle: 'Загрузите материалы и пройдите оценку навыков',
+        badge: 'Раздел 1'
+      },
+      simulator: {
+        title: 'Симулятор продуктовых навыков',
+        subtitle: 'Развивайте навыки через теорию, кейсы и практику',
+        badge: 'Раздел 2'
+      }
+    };
+
+    function showTopScreen(id) {
+      const meta = screenMeta[id];
+      if (!meta) return;
+      ui.topTabs.forEach(tab => tab.classList.toggle('active', tab.dataset.screen === id));
+      ui.topScreens.forEach(screen => screen.classList.toggle('active', screen.id === `screen-${id}`));
+      ui.title.textContent = meta.title;
+      ui.subtitle.textContent = meta.subtitle;
+      ui.badge.textContent = meta.badge;
+    }
+
+    function bindStepGroup(stepSelector, viewSelector, stepKey, viewKey) {
+      const stepButtons = [...document.querySelectorAll(stepSelector)];
+      const views = [...document.querySelectorAll(viewSelector)];
+
+      const activate = id => {
+        stepButtons.forEach(button => button.classList.toggle('active', button.dataset[stepKey] === id));
+        views.forEach(view => {
+          view.hidden = view.dataset[viewKey] !== id;
+        });
+      };
+
+      stepButtons.forEach(button => {
+        button.addEventListener('click', () => activate(button.dataset[stepKey]));
+      });
+
+      return activate;
+    }
+
+    const showDiagStep = bindStepGroup('[data-diag-step]', '[data-diag-view]', 'diagStep', 'diagView');
+    const showSimStep = bindStepGroup('[data-sim-step]', '[data-sim-view]', 'simStep', 'simView');
+
+    document.querySelectorAll('[data-diag-next]').forEach(button => {
+      button.addEventListener('click', () => showDiagStep(button.dataset.diagNext));
+    });
+
+    document.querySelectorAll('[data-sim-next]').forEach(button => {
+      button.addEventListener('click', () => showSimStep(button.dataset.simNext));
+    });
+
+    ui.topTabs.forEach(tab => {
+      tab.addEventListener('click', () => showTopScreen(tab.dataset.screen));
+    });
+
+    document.getElementById('toSimulator')?.addEventListener('click', () => {
+      showTopScreen('simulator');
+    });
+
+    function wireUpload(config) {
+      const button = document.getElementById(config.buttonId);
+      const input = document.getElementById(config.inputId);
+      const zone = document.getElementById(config.zoneId);
+      const text = document.getElementById(config.textId);
+      const status = document.getElementById(config.statusId);
+
+      if (!button || !input || !zone || !text || !status) return;
+
+      button.addEventListener('click', () => input.click());
+      input.addEventListener('change', () => {
+        const file = input.files?.[0];
+        if (!file) return;
+        zone.classList.add('good');
+        text.textContent = file.name;
+        status.textContent = config.successText;
+        status.className = 'status ok';
+      });
+    }
+
+    [
+      { buttonId:'excelBtn', inputId:'excelInput', zoneId:'excelZone', textId:'excelText', statusId:'excelStatus', successText:'Загружен' },
+      { buttonId:'wordBtn', inputId:'wordInput', zoneId:'wordZone', textId:'wordText', statusId:'wordStatus', successText:'Загружен' },
+      { buttonId:'simBtn', inputId:'simInput', zoneId:'simZone', textId:'simText', statusId:'simStatus', successText:'Загружен' }
+    ].forEach(wireUpload);
+
+    document.getElementById('finishProcessing')?.addEventListener('click', () => {
+      ui.processingBar.style.width = '100%';
+      window.setTimeout(() => showDiagStep('results'), 300);
+    });
+
+    showTopScreen('diagnostic');
+    showDiagStep('intro');
+    showSimStep('skills');
+  </script>
+</body>
+</html>
