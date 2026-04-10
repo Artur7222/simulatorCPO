@@ -1,7 +1,7 @@
 import "./styles.css";
 import { goToDiagnosticStep, goToSimulatorStep, goToTopLevelScreen } from "./router/screenRouter";
-import { getAppState } from "./state/appState";
-import type { DiagnosticStepId, SimulatorStepId, TopLevelScreenId } from "./types/app";
+import { getAppState, subscribeToAppState } from "./state/appState";
+import type { AppState, DiagnosticStepId, SimulatorStepId, TopLevelScreenId } from "./types/app";
 
 const app = document.querySelector<HTMLDivElement>("#app");
 
@@ -152,7 +152,7 @@ app.innerHTML = `
                     </div>
                     <p id="wordText">Файл не выбран</p>
                     <button class="button secondary" id="wordBtn">Загрузить файл</button>
-                    <input class="hidden-input" id="wordInput" type="file" accept=".docx,.doc" />
+                    <input class="hidden-input" id="wordInput" type="file" accept=".docx" />
                   </div>
                 </div>
               </div>
@@ -255,7 +255,7 @@ app.innerHTML = `
                   </div>
                   <p id="simText">Файл не выбран</p>
                   <button class="button secondary" id="simBtn">Загрузить файл</button>
-                  <input class="hidden-input" id="simInput" type="file" accept=".docx,.doc" />
+                  <input class="hidden-input" id="simInput" type="file" accept=".docx" />
                 </div>
               </div>
             </div>
@@ -300,8 +300,7 @@ function bindStepGroup(
   stepSelector: string,
   viewSelector: string,
   stepDataKey: "diagStep" | "simStep",
-  viewDataKey: "diagView" | "simView",
-  onStepSelected: (step: DiagnosticStepId | SimulatorStepId) => void
+  viewDataKey: "diagView" | "simView"
 ): (id: DiagnosticStepId | SimulatorStepId) => void {
   const stepButtons = [...document.querySelectorAll<HTMLButtonElement>(stepSelector)];
   const views = [...document.querySelectorAll<HTMLElement>(viewSelector)];
@@ -313,16 +312,7 @@ function bindStepGroup(
     views.forEach((view) => {
       view.hidden = view.dataset[viewDataKey] !== id;
     });
-    onStepSelected(id);
   };
-
-  stepButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      const step = button.dataset[stepDataKey];
-      if (!step) return;
-      activate(step as DiagnosticStepId | SimulatorStepId);
-    });
-  });
 
   return activate;
 }
@@ -331,22 +321,36 @@ const showDiagStep = bindStepGroup(
   "[data-diag-step]",
   "[data-diag-view]",
   "diagStep",
-  "diagView",
-  (step) => goToDiagnosticStep(step as DiagnosticStepId)
+  "diagView"
 );
 const showSimStep = bindStepGroup(
   "[data-sim-step]",
   "[data-sim-view]",
   "simStep",
-  "simView",
-  (step) => goToSimulatorStep(step as SimulatorStepId)
+  "simView"
 );
+
+document.querySelectorAll<HTMLButtonElement>("[data-diag-step]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const nextStep = button.dataset.diagStep as DiagnosticStepId | undefined;
+    if (!nextStep) return;
+    goToDiagnosticStep(nextStep);
+  });
+});
 
 document.querySelectorAll<HTMLButtonElement>("[data-diag-next]").forEach((button) => {
   button.addEventListener("click", () => {
     const nextStep = button.dataset.diagNext as DiagnosticStepId | undefined;
     if (!nextStep) return;
-    showDiagStep(nextStep);
+    goToDiagnosticStep(nextStep);
+  });
+});
+
+document.querySelectorAll<HTMLButtonElement>("[data-sim-step]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const nextStep = button.dataset.simStep as SimulatorStepId | undefined;
+    if (!nextStep) return;
+    goToSimulatorStep(nextStep);
   });
 });
 
@@ -354,7 +358,7 @@ document.querySelectorAll<HTMLButtonElement>("[data-sim-next]").forEach((button)
   button.addEventListener("click", () => {
     const nextStep = button.dataset.simNext as SimulatorStepId | undefined;
     if (!nextStep) return;
-    showSimStep(nextStep);
+    goToSimulatorStep(nextStep);
   });
 });
 
@@ -369,7 +373,7 @@ document.querySelectorAll<HTMLButtonElement>(".tab").forEach((tab) => {
 
 document.querySelector<HTMLButtonElement>("#toSimulator")?.addEventListener("click", () => {
   goToTopLevelScreen("simulator");
-  showTopScreen("simulator");
+  goToSimulatorStep("skills");
 });
 
 type UploadConfig = {
@@ -433,10 +437,14 @@ document.querySelector<HTMLButtonElement>("#finishProcessing")?.addEventListener
   if (processingBar) {
     processingBar.style.width = "100%";
   }
-  window.setTimeout(() => showDiagStep("results"), 300);
+  window.setTimeout(() => goToDiagnosticStep("results"), 300);
 });
 
-const state = getAppState();
-showTopScreen(state.currentScreen);
-showDiagStep(state.diagnosticStep);
-showSimStep(state.simulatorStep);
+function renderFromState(state: AppState): void {
+  showTopScreen(state.currentScreen);
+  showDiagStep(state.diagnosticStep);
+  showSimStep(state.simulatorStep);
+}
+
+renderFromState(getAppState());
+subscribeToAppState(renderFromState);
