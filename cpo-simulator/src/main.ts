@@ -1,6 +1,12 @@
 import "./styles.css";
 import { goToDiagnosticStep, goToSimulatorStep, goToTopLevelScreen } from "./router/screenRouter";
-import { getAppState, subscribeToAppState } from "./state/appState";
+import {
+  getAppState,
+  setDiagnosticExcelFileName,
+  setDiagnosticUploadError,
+  setDiagnosticWordFileName,
+  subscribeToAppState
+} from "./state/appState";
 import type { AppState, DiagnosticStepId, SimulatorStepId, TopLevelScreenId } from "./types/app";
 
 const app = document.querySelector<HTMLDivElement>("#app");
@@ -54,7 +60,7 @@ app.innerHTML = `
                   </div>
                   <p>Кейс: продукт сталкивается с замедлением активации и снижением конверсии в ключевом пользовательском сценарии. Ваша задача — проанализировать проблему и предложить продуктовые решения.</p>
                   <div class="footer-actions section-gap-top">
-                    <button class="button primary" data-diag-next="task">Начать диагностику</button>
+                    <button class="button primary" id="startDiagnosticBtn" data-diag-next="task">Начать диагностику</button>
                   </div>
                 </div>
                 <div class="card result-highlight">
@@ -155,6 +161,7 @@ app.innerHTML = `
                     <input class="hidden-input" id="wordInput" type="file" accept=".docx" />
                   </div>
                 </div>
+                <p class="upload-error" id="diagnosticUploadError" hidden></p>
               </div>
             </div>
           </section>
@@ -334,6 +341,12 @@ document.querySelectorAll<HTMLButtonElement>("[data-diag-step]").forEach((button
   button.addEventListener("click", () => {
     const nextStep = button.dataset.diagStep as DiagnosticStepId | undefined;
     if (!nextStep) return;
+    const state = getAppState();
+    const canStartDiagnostic = Boolean(state.diagnosticExcelFileName && state.diagnosticWordFileName);
+    if (nextStep === "task" && !canStartDiagnostic) {
+      setDiagnosticUploadError("Перед стартом загрузите Excel с критериями и Word с кейсом.");
+      return;
+    }
     goToDiagnosticStep(nextStep);
   });
 });
@@ -342,6 +355,12 @@ document.querySelectorAll<HTMLButtonElement>("[data-diag-next]").forEach((button
   button.addEventListener("click", () => {
     const nextStep = button.dataset.diagNext as DiagnosticStepId | undefined;
     if (!nextStep) return;
+    const state = getAppState();
+    const canStartDiagnostic = Boolean(state.diagnosticExcelFileName && state.diagnosticWordFileName);
+    if (nextStep === "task" && !canStartDiagnostic) {
+      setDiagnosticUploadError("Перед стартом загрузите Excel с критериями и Word с кейсом.");
+      return;
+    }
     goToDiagnosticStep(nextStep);
   });
 });
@@ -377,6 +396,7 @@ document.querySelector<HTMLButtonElement>("#toSimulator")?.addEventListener("cli
 });
 
 type UploadConfig = {
+  kind: "diagnostic-excel" | "diagnostic-word" | "simulator-word";
   buttonId: string;
   inputId: string;
   zoneId: string;
@@ -398,15 +418,33 @@ function wireUpload(config: UploadConfig): void {
   input.addEventListener("change", () => {
     const file = input.files?.[0];
     if (!file) return;
+    if (config.kind === "diagnostic-excel" && !/\.xlsx?$/.test(file.name.toLowerCase())) {
+      setDiagnosticUploadError("Для критериев диагностики нужен файл Excel (.xlsx или .xls).");
+      return;
+    }
+    if (config.kind === "diagnostic-word" && !/\.docx$/.test(file.name.toLowerCase())) {
+      setDiagnosticUploadError("Для кейса диагностики нужен файл Word в формате .docx.");
+      return;
+    }
     zone.classList.add("good");
     text.textContent = file.name;
     status.textContent = config.successText;
     status.className = "status ok";
+    if (config.kind === "diagnostic-excel") {
+      setDiagnosticExcelFileName(file.name);
+    }
+    if (config.kind === "diagnostic-word") {
+      setDiagnosticWordFileName(file.name);
+    }
+    if (config.kind === "diagnostic-excel" || config.kind === "diagnostic-word") {
+      setDiagnosticUploadError(null);
+    }
   });
 }
 
-[
+const uploadConfigs: UploadConfig[] = [
   {
+    kind: "diagnostic-excel",
     buttonId: "excelBtn",
     inputId: "excelInput",
     zoneId: "excelZone",
@@ -415,6 +453,7 @@ function wireUpload(config: UploadConfig): void {
     successText: "Загружен"
   },
   {
+    kind: "diagnostic-word",
     buttonId: "wordBtn",
     inputId: "wordInput",
     zoneId: "wordZone",
@@ -423,6 +462,7 @@ function wireUpload(config: UploadConfig): void {
     successText: "Загружен"
   },
   {
+    kind: "simulator-word",
     buttonId: "simBtn",
     inputId: "simInput",
     zoneId: "simZone",
@@ -430,7 +470,9 @@ function wireUpload(config: UploadConfig): void {
     statusId: "simStatus",
     successText: "Загружен"
   }
-].forEach(wireUpload);
+];
+
+uploadConfigs.forEach(wireUpload);
 
 document.querySelector<HTMLButtonElement>("#finishProcessing")?.addEventListener("click", () => {
   const processingBar = document.getElementById("processingBar");
@@ -444,6 +486,22 @@ function renderFromState(state: AppState): void {
   showTopScreen(state.currentScreen);
   showDiagStep(state.diagnosticStep);
   showSimStep(state.simulatorStep);
+
+  const startButton = document.querySelector<HTMLButtonElement>("#startDiagnosticBtn");
+  const errorText = document.querySelector<HTMLElement>("#diagnosticUploadError");
+  const isReadyToStart = Boolean(state.diagnosticExcelFileName && state.diagnosticWordFileName);
+  if (startButton) {
+    startButton.disabled = !isReadyToStart;
+  }
+  if (errorText) {
+    if (state.diagnosticUploadError) {
+      errorText.hidden = false;
+      errorText.textContent = state.diagnosticUploadError;
+    } else {
+      errorText.hidden = true;
+      errorText.textContent = "";
+    }
+  }
 }
 
 renderFromState(getAppState());

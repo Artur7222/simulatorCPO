@@ -468,6 +468,16 @@ button { cursor:pointer; border:none; }
   border-top:1px solid #edf1f7;
 }
 
+.upload-error {
+  margin-top:12px;
+  padding:10px 12px;
+  border:1px solid #fecaca;
+  border-radius:12px;
+  background:#fef2f2;
+  color:#b91c1c;
+  font-size:13px;
+}
+
 @media (max-width:1120px) {
   .layout,
   .row,

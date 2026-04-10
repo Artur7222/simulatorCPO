@@ -19,7 +19,10 @@ const state: AppState = {
   currentSkillId: null,
   simulatorProgress: {},
   simulatorAnswers: [],
-  simulatorResults: []
+  simulatorResults: [],
+  diagnosticExcelFileName: null,
+  diagnosticWordFileName: null,
+  diagnosticUploadError: null
 };
 
 export function getAppState(): AppState {
@@ -86,6 +89,21 @@ export function setDiagnosticRecommendations(recommendations: DiagnosticRecommen
 
 export function setSimulatorResults(results: SimulatorSkillResult[]): void {
   state.simulatorResults = results;
+  notifyStateChanged();
+}
+
+export function setDiagnosticExcelFileName(fileName: string | null): void {
+  state.diagnosticExcelFileName = fileName;
+  notifyStateChanged();
+}
+
+export function setDiagnosticWordFileName(fileName: string | null): void {
+  state.diagnosticWordFileName = fileName;
+  notifyStateChanged();
+}
+
+export function setDiagnosticUploadError(error: string | null): void {
+  state.diagnosticUploadError = error;
   notifyStateChanged();
 }
 

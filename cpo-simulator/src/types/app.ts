@@ -59,4 +59,7 @@ export interface AppState {
   simulatorProgress: Record<SkillId, number>;
   simulatorAnswers: SimulatorAnswer[];
   simulatorResults: SimulatorSkillResult[];
+  diagnosticExcelFileName: string | null;
+  diagnosticWordFileName: string | null;
+  diagnosticUploadError: string | null;
 }
