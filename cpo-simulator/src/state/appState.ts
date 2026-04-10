@@ -2,8 +2,8 @@ import type { AppState, DiagnosticStepId, SimulatorStepId, TopLevelScreenId } fr
 
 const state: AppState = {
   currentScreen: "diagnostic",
-  diagnosticStep: "diagnostic-intro",
-  simulatorStep: "simulator-skills"
+  diagnosticStep: "intro",
+  simulatorStep: "skills"
 };
 
 export function getAppState(): AppState {
