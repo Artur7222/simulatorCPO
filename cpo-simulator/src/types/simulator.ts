@@ -56,6 +56,8 @@ export type SimulatorBlock =
 
 export interface SimulatorSkillContent {
   skillId: SkillId;
+  title?: string;
+  description?: string;
   blocks: SimulatorBlock[];
 }
 

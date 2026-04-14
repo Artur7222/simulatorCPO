@@ -1,6 +1,6 @@
 import type { DiagnosticRecommendation, DiagnosticResult } from "../types/diagnostic";
 import type { SimulatorAnswer, SimulatorSkillContent, SimulatorSkillResult, SkillId } from "../types/simulator";
-import type { AppState, DiagnosticStepId, SimulatorStepId, TopLevelScreenId, User } from "../types/app";
+import type { AppState, DiagnosticStepId, SimulatorStepId, TopLevelScreenId, UploadState, User } from "../types/app";
 
 type StateListener = (state: AppState) => void;
 const listeners = new Set<StateListener>();
@@ -11,15 +11,37 @@ const state: AppState = {
   diagnosticStep: "intro",
   simulatorStep: "skills",
   diagnosticDataBundle: null,
+  currentDiagnosticTaskIndex: 0,
   diagnosticAnswers: {},
   diagnosticResults: [],
   diagnosticRecommendations: [],
+  diagnosticSummary: "",
   selectedSkillIds: [],
   simulatorSkills: [],
   currentSkillId: null,
   simulatorProgress: {},
   simulatorAnswers: [],
   simulatorResults: [],
+  diagnosticExcelUpload: {
+    fileName: null,
+    fileSize: null,
+    status: "idle",
+    error: null
+  },
+  diagnosticWordUpload: {
+    fileName: null,
+    fileSize: null,
+    status: "idle",
+    error: null
+  },
+  simulatorWordUpload: {
+    fileName: null,
+    fileSize: null,
+    status: "idle",
+    error: null
+  },
+  diagnosticDataReady: false,
+  simulatorDataReady: false,
   diagnosticExcelFileName: null,
   diagnosticWordFileName: null,
   diagnosticUploadError: null
@@ -72,6 +94,11 @@ export function setCurrentSkillId(skillId: SkillId | null): void {
   notifyStateChanged();
 }
 
+export function setSimulatorSkillProgress(skillId: SkillId, value: number): void {
+  state.simulatorProgress[skillId] = value;
+  notifyStateChanged();
+}
+
 export function setSimulatorSkills(skills: SimulatorSkillContent[]): void {
   state.simulatorSkills = skills;
   notifyStateChanged();
@@ -82,6 +109,11 @@ export function setDiagnosticResults(results: DiagnosticResult[]): void {
   notifyStateChanged();
 }
 
+export function setDiagnosticSummary(summary: string): void {
+  state.diagnosticSummary = summary;
+  notifyStateChanged();
+}
+
 export function setDiagnosticRecommendations(recommendations: DiagnosticRecommendation[]): void {
   state.diagnosticRecommendations = recommendations;
   notifyStateChanged();
@@ -89,6 +121,16 @@ export function setDiagnosticRecommendations(recommendations: DiagnosticRecommen
 
 export function setSimulatorResults(results: SimulatorSkillResult[]): void {
   state.simulatorResults = results;
+  notifyStateChanged();
+}
+
+export function upsertSimulatorResult(result: SimulatorSkillResult): void {
+  const index = state.simulatorResults.findIndex((item) => item.skillId === result.skillId);
+  if (index === -1) {
+    state.simulatorResults.push(result);
+  } else {
+    state.simulatorResults[index] = result;
+  }
   notifyStateChanged();
 }
 
@@ -104,6 +146,55 @@ export function setDiagnosticWordFileName(fileName: string | null): void {
 
 export function setDiagnosticUploadError(error: string | null): void {
   state.diagnosticUploadError = error;
+  notifyStateChanged();
+}
+
+export function setDiagnosticExcelUpload(upload: UploadState): void {
+  state.diagnosticExcelUpload = upload;
+  notifyStateChanged();
+}
+
+export function setDiagnosticWordUpload(upload: UploadState): void {
+  state.diagnosticWordUpload = upload;
+  notifyStateChanged();
+}
+
+export function setSimulatorWordUpload(upload: UploadState): void {
+  state.simulatorWordUpload = upload;
+  notifyStateChanged();
+}
+
+export function setDiagnosticDataReady(value: boolean): void {
+  state.diagnosticDataReady = value;
+  notifyStateChanged();
+}
+
+export function setSimulatorDataReady(value: boolean): void {
+  state.simulatorDataReady = value;
+  notifyStateChanged();
+}
+
+export function setDiagnosticDataBundle(bundle: AppState["diagnosticDataBundle"]): void {
+  state.diagnosticDataBundle = bundle;
+  notifyStateChanged();
+}
+
+export function setCurrentDiagnosticTaskIndex(index: number): void {
+  state.currentDiagnosticTaskIndex = index;
+  notifyStateChanged();
+}
+
+export function upsertDiagnosticAnswer(answer: AppState["diagnosticAnswers"][string]): void {
+  state.diagnosticAnswers[answer.taskId] = answer;
+  notifyStateChanged();
+}
+
+export function resetDiagnosticRun(): void {
+  state.currentDiagnosticTaskIndex = 0;
+  state.diagnosticAnswers = {};
+  state.diagnosticResults = [];
+  state.diagnosticRecommendations = [];
+  state.diagnosticSummary = "";
   notifyStateChanged();
 }
 

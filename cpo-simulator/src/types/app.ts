@@ -44,21 +44,37 @@ export interface AiEvaluationResponse {
   recommendations: DiagnosticRecommendation[];
 }
 
+export type UploadStatus = "idle" | "loading" | "success" | "error";
+
+export interface UploadState {
+  fileName: string | null;
+  fileSize: number | null;
+  status: UploadStatus;
+  error: string | null;
+}
+
 export interface AppState {
   currentUser: User | null;
   currentScreen: TopLevelScreenId;
   diagnosticStep: DiagnosticStepId;
   simulatorStep: SimulatorStepId;
   diagnosticDataBundle: DiagnosticDataBundle | null;
+  currentDiagnosticTaskIndex: number;
   diagnosticAnswers: Record<string, DiagnosticAnswer>;
   diagnosticResults: DiagnosticResult[];
   diagnosticRecommendations: DiagnosticRecommendation[];
+  diagnosticSummary: string;
   selectedSkillIds: SkillId[];
   simulatorSkills: SimulatorSkillContent[];
   currentSkillId: SkillId | null;
   simulatorProgress: Record<SkillId, number>;
   simulatorAnswers: SimulatorAnswer[];
   simulatorResults: SimulatorSkillResult[];
+  diagnosticExcelUpload: UploadState;
+  diagnosticWordUpload: UploadState;
+  simulatorWordUpload: UploadState;
+  diagnosticDataReady: boolean;
+  simulatorDataReady: boolean;
   diagnosticExcelFileName: string | null;
   diagnosticWordFileName: string | null;
   diagnosticUploadError: string | null;

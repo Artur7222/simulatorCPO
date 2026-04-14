@@ -2,15 +2,38 @@ export interface DiagnosticTask {
   id: string;
   order: number;
   skillName: string;
+  topic: string;
   question: string;
   guidance?: string;
+  constraints?: string[];
+  inputData?: DiagnosticTaskInputData;
 }
 
-export interface DiagnosticScoringRule {
+export interface DiagnosticTaskInputData {
+  contextLines?: string[];
+  numericFacts?: Array<{ name: string; value: number; unit?: string }>;
+  tableRows?: Array<Record<string, string | number>>;
+}
+
+export interface DiagnosticCriterion {
+  id: string;
+  title: string;
+  weight: number;
+  evidenceKeywords: string[];
+  failSignals?: string[];
+  minKeywordHits?: number;
+}
+
+export interface DiagnosticTaskRubric {
+  taskId: string;
+  criteria: DiagnosticCriterion[];
+}
+
+export interface DiagnosticSkillRule {
   skillName: string;
-  minScore: number;
   maxScore: number;
-  rubric: string;
+  weight: number;
+  rubricSummary: string;
 }
 
 export interface DiagnosticAnswer {
@@ -33,7 +56,16 @@ export interface DiagnosticRecommendation {
 }
 
 export interface DiagnosticDataBundle {
+  meta: DiagnosticDatasetMeta;
   introText: string;
+  caseDescription: string;
   tasks: DiagnosticTask[];
-  scoringRules: DiagnosticScoringRule[];
+  taskRubrics: DiagnosticTaskRubric[];
+  skillRules: DiagnosticSkillRule[];
+}
+
+export interface DiagnosticDatasetMeta {
+  schemaVersion: string;
+  sourceDescription: string;
+  generatedAtIso: string;
 }

@@ -413,6 +413,13 @@ button { cursor:pointer; border:none; }
   background:#fff;
   color:#111827;
   resize:none;
+  transition:border-color .2s ease, box-shadow .2s ease;
+}
+
+.textarea:focus {
+  outline:none;
+  border-color:rgba(139,92,246,.55);
+  box-shadow:0 0 0 3px rgba(139,92,246,.16);
 }
 
 .meta {
@@ -476,6 +483,40 @@ button { cursor:pointer; border:none; }
   background:#fef2f2;
   color:#b91c1c;
   font-size:13px;
+}
+
+.fact-list {
+  display:grid;
+  gap:8px;
+  padding-left:18px;
+  color:var(--text-soft);
+}
+
+.task-table-wrap {
+  overflow:auto;
+  border:1px solid #dfe5f1;
+  border-radius:14px;
+}
+
+.task-table {
+  width:100%;
+  border-collapse:collapse;
+  min-width:640px;
+  font-size:14px;
+}
+
+.task-table th,
+.task-table td {
+  padding:10px 12px;
+  border-bottom:1px solid #edf1f7;
+  text-align:left;
+  white-space:nowrap;
+}
+
+.task-table th {
+  background:#f8faff;
+  color:#334155;
+  font-weight:700;
 }
 
 @media (max-width:1120px) {
